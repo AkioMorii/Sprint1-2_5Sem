@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import bcrypt from 'bcryptjs';
+
+// Fallback de aleatoriedade compatível com bcryptjs
+bcrypt.setRandomFallback((len: number) => {
+  const buf = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    buf[i] = Math.floor(Math.random() * 256);
+  }
+  return Array.from(buf);
+});
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -30,10 +40,12 @@ export default function RegisterScreen({ navigation }: any) {
     }
 
     try {
-      // Criando um objeto com o email e senha
-      const user = { email, password };
+      // Gerar o hash da senha
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync(password, salt);
 
-      // Armazenando o objeto completo no AsyncStorage
+      const user = { email, password: hashedPassword };
+
       await AsyncStorage.setItem('user', JSON.stringify(user));
 
       Alert.alert('Sucesso', 'Usuário cadastrado com sucesso!');

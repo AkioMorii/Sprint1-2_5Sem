@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import bcrypt from 'bcryptjs';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -21,16 +22,19 @@ export default function LoginScreen({ navigation }: any) {
       if (storedUser) {
         const user = JSON.parse(storedUser);
 
-        if (
-          user.email.toLowerCase() === trimmedEmail &&
-          user.password === trimmedPassword
-        ) {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Home', params: { email: trimmedEmail } }],
-          });
+        if (user.email.toLowerCase() === trimmedEmail) {
+          const passwordMatch = bcrypt.compareSync(trimmedPassword, user.password);
+
+          if (passwordMatch) {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home', params: { email: trimmedEmail } }],
+            });
+          } else {
+            Alert.alert('Erro', 'Senha incorreta!');
+          }
         } else {
-          Alert.alert('Erro', 'Credenciais inválidas!');
+          Alert.alert('Erro', 'Usuário não encontrado com este e-mail!');
         }
       } else {
         Alert.alert('Erro', 'Usuário não encontrado! Faça o cadastro.');
